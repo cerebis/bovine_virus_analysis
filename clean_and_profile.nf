@@ -1,6 +1,6 @@
 include { reads_profile; contig_assign } from './modules/tax_profile.nf'
 include { trim; clean_up               } from './modules/clean_reads.nf'
-include { kmer_spades                  } from './modules/assemble.nf'
+include { kmer_spades; meta_spades     } from './modules/assemble.nf'
 include { find_rnavirus                } from './modules/virus.nf'
 
 params.trim_only = false
@@ -69,8 +69,9 @@ workflow {
                   Channel.value(params.min_len),
                   Channel.value(params.rank))
 
-    asm = kmer_spades(read_sets,
-                      Channel.value(params.kmer_series))
+//    asm = kmer_spades(read_sets,
+//                      Channel.value(params.kmer_series))
+    asm = meta_spades(read_sets)
 
 //    if (params.asm_mode == "rna") {
 //        asm = rna_spades(read_sets)
