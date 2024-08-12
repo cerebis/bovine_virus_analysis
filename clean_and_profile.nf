@@ -30,7 +30,7 @@ workflow {
     }
     else {
         read_sets = clean_up(read_sets)
-    } 
+    }
 
     reads_profile(read_sets,
                   Channel.value(params.sm_ref),
@@ -39,7 +39,7 @@ workflow {
                   Channel.value(params.rank))
 
     asm = kmer_spades(read_sets,
-                      Channel.fromList(params.kmer_series))
+                      Channel.value(params.kmer_series))
 
 //    if (params.asm_mode == "rna") {
 //        asm = rna_spades(read_sets)
