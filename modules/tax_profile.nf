@@ -23,13 +23,15 @@ process Gather {
 
   input:
   tuple val(name), path(sketch)
+  each val(ref_db)
+  each val(min_len)
 
   output:
   tuple val(name), path('matches.zip'), path('gather.csv')
 
   """
-  sourmash gather --threshold-bp $params.minlen $sketch ${params.reference_db} --save-matches matches.zip
-  sourmash gather --threshold-bp $params.minlen $sketch matches.zip -o gather.csv
+  sourmash gather --threshold-bp $min_len $sketch $ref_db --save-matches matches.zip
+  sourmash gather --threshold-bp $min_len $sketch matches.zip -o gather.csv
   """
 }
 
@@ -41,15 +43,16 @@ process GatherExtra {
 
   input:
   tuple val(name), path(sketch), path(matches)
-  val(refdb)
+  each val(ref_db)
+  each val(min_len)
 
   output:
   tuple val(name), path('gather_extra.csv')
   path('matches_extra.zip') 
 
   """
-  sourmash gather --threshold-bp $params.minlen $sketch $refdb --save-matches matches_extra.zip
-  sourmash gather --threshold-bp $params.minlen $sketch $matches matches_extra.zip -o gather_extra.csv
+  sourmash gather --threshold-bp $min_len $sketch $ref_db --save-matches matches_extra.zip
+  sourmash gather --threshold-bp $min_len $sketch $matches matches_extra.zip -o gather_extra.csv
   """
 }
 
@@ -61,13 +64,15 @@ process TaxProfile {
 
   input:
   tuple val(name), path(matches), path(gather)
+  each val(tax_db)
+  each val(rank)
 
   output:
   path('taxprof.*')
 
   """
   sourmash tax metagenome -F human csv_summary lineage_summary krona kreport \
-     -g $gather -t ${params.taxonomy_db} -r ${params.rank} -o taxprof
+     -g $gather -t $tax_db -r $rank -o taxprof
   """
 }
 
@@ -79,8 +84,8 @@ process TaxProfileExtra {
 
   input:
   tuple val(name), path(gather)
-  val(taxdb)
-  val(rank)
+  each val(tax_db)
+  each val(rank)
 
   output:
   path('taxprof_extra.*')
@@ -89,7 +94,7 @@ process TaxProfileExtra {
   sourmash tax metagenome \
         -F human csv_summary lineage_summary krona kreport \
         -g $gather \
-        -t $taxdb \
+        -t $tax_db \
         -r $rank \
         -o taxprof_extra
   """
@@ -164,11 +169,15 @@ workflow contig_assign {
 workflow reads_profile {
   take:
   read_sets
+  ref_db
+  tax_db
+  min_len
+  rank
 
   main:
   Sketch(read_sets)
-  Gather(Sketch.out)
-  TaxProfile(Gather.out)
+  Gather(Sketch.out, ref_db, min_len)
+  TaxProfile(Gather.out, tax_db, rank)
 
   emit:
   TaxProfile.out

@@ -44,6 +44,36 @@ process Spades {
     }
 }
 
+process KmerSpades {
+    conda '/shared/homes/120274/miniconda3/envs/spades'
+    publishDir params.outdir, mode: 'copy', saveAs: {fn -> "${name}/${asm_mode}spades/"}
+    cpus params.asm_cpus
+    memory params.asm_maxmem
+    queue params.asm_queue
+    scratch '/scratch/u120274'
+
+    input:
+    tuple val(name), path(r1), path(r2)
+    val(kmer_series)
+
+    output:
+    tuple val(name), val(asm_mode), path('out/final.fasta'), emit: asm_seqs
+    path('out'), emit: outdir
+
+    script:
+    """
+    spades.py --meta \
+              -k $kmer_series \
+              --threads ${task.cpus} \
+              -1 $r1 -2 $r2 \
+              -o out
+    cd out
+    mv scaffolds.fasta final.fasta
+    ln -s final.fasta scaffolds.fasta
+    """
+    }
+}
+
 process ExtendedSpades {
 
     conda '/shared/homes/120274/miniconda3/envs/spades'
@@ -95,6 +125,19 @@ workflow default_spades {
 
     emit:
     asm_seqs = Spades.out.asm_seqs
+}
+
+workflow kmer_spades {
+
+    take:
+    read_sets
+    kmer_series
+
+    main:
+    KmerSpades(read_sets, kmer_series)
+
+    emit:
+    asm_seqs = KmerSpades.out.asm_seqs
 }
 
 workflow rna_spades {

@@ -13,7 +13,11 @@ process Fastp {
 
   """
   mkdir -p out
-  fastp -w ${task.cpus} --detect_adapter_for_pe -f 1 -F 1 -i $r1 -I $r2 -o out/${r1.fileName} -O out/${r2.fileName} -h out/report.html
+  fastp -w ${task.cpus} --detect_adapter_for_pe \
+        -f 1 -F 1 \
+        -i $r1 -I $r2 \
+        -o out/${r1.fileName} -O out/${r2.fileName} \
+        -h out/report.html
   """
 }
 
@@ -34,7 +38,10 @@ process Hostile {
 
   shell:
   '''
-  hostile clean --fastq1 !{r1} --fastq2 !{r2} --index !{index} --threads !{task.cpus-3} --out-dir out > hostile.log
+  hostile clean --fastq1 !{r1} --fastq2 !{r2} \
+                --index !{index} \
+                --threads !{task.cpus-3} \
+                --out-dir out > hostile.log
   '''
 }
 

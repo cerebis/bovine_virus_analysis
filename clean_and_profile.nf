@@ -1,6 +1,6 @@
 include { reads_profile; contig_assign } from './modules/tax_profile.nf'
 include { trim; clean_up               } from './modules/clean_reads.nf'
-include { rna_spades; meta_spades      } from './modules/assemble.nf'
+include { kmer_spades                  } from './modules/assemble.nf'
 include { find_rnavirus                } from './modules/virus.nf'
 
 /*
@@ -11,10 +11,10 @@ include { find_rnavirus                } from './modules/virus.nf'
  * --human_index [PATH] --host_index [PATH]
  *
  * profile args:
- * --reference_db [PATH] --minlen [INT] --rank [RANK] --taxonomy_db [PATH]
+ * --sm_ref [PATH] --sm_tax [PATH] --cat_ref [PATH] --cat_tax [PATH] --min_len [INT] --rank [RANK]
  *
  * assembly args:
- * --asm_mode [STR] --extra_kmers [INT,INT,INT,...]
+ * --asm_mode [STR] Optional: ( --extra_kmers [INT,INT,INT,...] | --kmer_series [INT,INT,INT,...] )
  */
 
 workflow {
@@ -28,15 +28,25 @@ workflow {
         read_sets = clean_up(read_sets)
     } 
 
-    reads_profile(read_sets)
-    
-    if (params.asm_mode == "rna") {
-        asm = rna_spades(read_sets)
-    }
-    else if (params.asm_mode == "meta") {
-        asm = meta_spades(read_sets)
-    }
+    reads_profile(read_sets,
+                  Channel.value(params.sm_ref),
+                  Channel.value(params.sm_tax),
+                  Channel.value(params.min_len),
+                  Channel.value(params.rank))
 
-    contig_assign(asm.asm_seqs, Channel.fromPath(params.cat_db), Channel.fromPath(params.cat_tax))
+    asm = kmer_spades(read_sets,
+                      Channel.fromList(params.kmer_series))
+
+//    if (params.asm_mode == "rna") {
+//        asm = rna_spades(read_sets)
+//    }
+//    else if (params.asm_mode == "meta") {
+//        asm = meta_spades(read_sets)
+//    }
+
+    contig_assign(asm.asm_seqs,
+                  Channel.fromPath(params.cat_db),
+                  Channel.fromPath(params.cat_tax))
+
     find_rnavirus(asm.asm_seqs)
 }
