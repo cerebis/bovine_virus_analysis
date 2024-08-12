@@ -40,13 +40,15 @@ process FasterqDump {
 }
 
 workflow extract_fastq {
+
     take:
     runs
 
     main:
+    FasterqDump(runs)
 
     emit:
-    read_sets
+    FasterqDump.out
 }
 
 workflow {
