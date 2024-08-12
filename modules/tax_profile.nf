@@ -23,8 +23,8 @@ process Gather {
 
   input:
   tuple val(name), path(sketch)
-  each val(ref_db)
-  each val(min_len)
+  val(ref_db)
+  val(min_len)
 
   output:
   tuple val(name), path('matches.zip'), path('gather.csv')
@@ -43,8 +43,8 @@ process GatherExtra {
 
   input:
   tuple val(name), path(sketch), path(matches)
-  each val(ref_db)
-  each val(min_len)
+  val(ref_db)
+  val(min_len)
 
   output:
   tuple val(name), path('gather_extra.csv')
@@ -64,8 +64,8 @@ process TaxProfile {
 
   input:
   tuple val(name), path(matches), path(gather)
-  each val(tax_db)
-  each val(rank)
+  val(tax_db)
+  val(rank)
 
   output:
   path('taxprof.*')
@@ -84,8 +84,8 @@ process TaxProfileExtra {
 
   input:
   tuple val(name), path(gather)
-  each val(tax_db)
-  each val(rank)
+  val(tax_db)
+  val(rank)
 
   output:
   path('taxprof_extra.*')
@@ -109,8 +109,8 @@ process CAT {
 
   input:
   tuple val(name), val(asm_run), path(contigs)
-  each path(cat_db)
-  each path(cat_tax)
+  val(cat_db)
+  val(cat_tax)
 
   output:
   tuple val(name), val(asm_run), path('CAT*')
@@ -133,7 +133,7 @@ process CAT_addnames {
 
   input:
   tuple val(name), val(asm_run), path(classification)
-  each path(cat_tax)
+  val(cat_tax)
 
   output:
   tuple val(name), val(asm_run), path('*.names.tsv')
