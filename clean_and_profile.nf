@@ -21,9 +21,38 @@ params.min_len = 5000
  * --asm_mode [STR] Optional: ( --extra_kmers [INT,INT,INT,...] | --kmer_series [INT,INT,INT,...] )
  */
 
+process FasterqDump {
+    publishDir params.outdir, mode: 'copy', saveAs: {fn -> "$name/raw_reads/$fn"}
+    cpus 8
+    memory '32 GB'
+
+    input:
+    tuple val(name), path(run) from runs
+
+    output:
+    tuple name, path('*_1.fastq.gz'), path('*_2.fastq.gz')
+
+    """
+    /shared/homes/120274/sratoolkit.3.1.1-ubuntu64/bin/sratools.3.1.1/fasterq-dump \
+        -O . -e ${task.cpus} -S -v
+    pigz -p ${task.cpus} *fastq
+    """
+}
+
+workflow extract_fastq {
+    take:
+    runs
+
+    main:
+
+    emit:
+    read_sets
+}
+
 workflow {
 
-    read_sets = Channel.fromPath(params.read_sets).splitCsv()
+    read_sets = extract_fastq(Channel.fromPath(params.runs).splitCsv())
+//    read_sets = Channel.fromPath(params.read_sets).splitCsv()
     
     if (params.trim_only == true) {
         read_sets = trim(read_sets)
