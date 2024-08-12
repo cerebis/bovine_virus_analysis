@@ -71,7 +71,6 @@ process KmerSpades {
     mv scaffolds.fasta final.fasta
     ln -s final.fasta scaffolds.fasta
     """
-    }
 }
 
 process ExtendedSpades {

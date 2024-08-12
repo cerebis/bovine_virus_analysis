@@ -3,6 +3,10 @@ include { trim; clean_up               } from './modules/clean_reads.nf'
 include { kmer_spades                  } from './modules/assemble.nf'
 include { find_rnavirus                } from './modules/virus.nf'
 
+params.trim_only = false
+params.rank = "genus"
+params.min_len = 5000
+
 /*
  * global args:
  * --outdir [PATH] --read_sets [CSV]
@@ -44,9 +48,9 @@ workflow {
 //        asm = meta_spades(read_sets)
 //    }
 
-    contig_assign(asm.asm_seqs,
-                  Channel.fromPath(params.cat_db),
-                  Channel.fromPath(params.cat_tax))
+//    contig_assign(asm.asm_seqs,
+//                  Channel.fromPath(params.cat_db),
+//                  Channel.fromPath(params.cat_tax))
 
     find_rnavirus(asm.asm_seqs)
 }
