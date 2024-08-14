@@ -8,12 +8,12 @@ process Fastp {
   tuple val(name), path(r1), path(r2)
 
   output:
-  tuple val(name), path('out/*R1*fastq.gz'), path('out/*R2*fastq.gz'), emit: reads
+  tuple val(name), path('out/*1.fastq.gz'), path('out/*2.fastq.gz'), emit: reads
   path('out/report.html')
 
   """
   mkdir -p out
-  fastp -w ${task.cpus} --detect_adapter_for_pe \
+  fastp -w ${task.cpus} --detect_adapter_for_pe --dedup \
         -f 1 -F 1 \
         -i $r1 -I $r2 \
         -o out/${r1.fileName} -O out/${r2.fileName} \
@@ -33,7 +33,7 @@ process Hostile {
   val(index)
 
   output:
-  tuple val(name), path('out/*R1*.fastq.gz'), path('out/*R2*.fastq.gz'), emit: reads
+  tuple val(name), path('out/*1.fastq.gz'), path('out/*2.fastq.gz'), emit: reads
   path('hostile.log')
 
   shell:

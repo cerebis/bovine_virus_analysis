@@ -27,13 +27,13 @@ process FasterqDump {
     memory '32 GB'
 
     input:
-    tuple val(name), path(run) from runs
+    tuple val(name), path(run)
 
     output:
-    tuple name, path('*_1.fastq.gz'), path('*_2.fastq.gz')
+    tuple val(name), path('*_1.fastq.gz'), path('*_2.fastq.gz')
 
     """
-    /shared/homes/120274/sratoolkit.3.1.1-ubuntu64/bin/sratools.3.1.1/fasterq-dump \
+    /shared/homes/120274/sratoolkit.3.1.1-ubuntu64/bin/fasterq-dump $run \
         -O . -e ${task.cpus} -S -v
     pigz -p ${task.cpus} *fastq
     """
@@ -53,7 +53,9 @@ workflow extract_fastq {
 
 workflow {
 
-    read_sets = extract_fastq(Channel.fromPath(params.runs).splitCsv())
+    runs = Channel.fromPath(params.runs).splitCsv()
+    read_sets = extract_fastq(runs)
+
 //    read_sets = Channel.fromPath(params.read_sets).splitCsv()
     
     if (params.trim_only == true) {
@@ -71,7 +73,8 @@ workflow {
 
 //    asm = kmer_spades(read_sets,
 //                      Channel.value(params.kmer_series))
-    asm = meta_spades(read_sets)
+
+//    asm = meta_spades(read_sets)
 
 //    if (params.asm_mode == "rna") {
 //        asm = rna_spades(read_sets)
@@ -84,5 +87,5 @@ workflow {
 //                  Channel.fromPath(params.cat_db),
 //                  Channel.fromPath(params.cat_tax))
 
-    find_rnavirus(asm.asm_seqs)
+//    find_rnavirus(asm.asm_seqs)
 }
