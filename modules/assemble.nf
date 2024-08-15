@@ -4,6 +4,7 @@ params.asm_cpus = 32
 params.asm_queue = 'workq'
 
 process Spades {
+    scratch '/scratch/u120274/'
     conda '/shared/homes/120274/miniconda3/envs/spades'
     publishDir params.outdir, mode: 'copy', saveAs: {fn -> "${name}/${asm_mode}spades/"}
     cpus params.asm_cpus
