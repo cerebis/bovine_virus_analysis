@@ -1,3 +1,22 @@
+process FastQC {
+    conda '/shared/homes/120274/miniconda3/envs/fastqc'
+    publishDir params.outdir, mode: 'copy', saveAs: {fn -> "$name/qc/reads/$stage/$fn"}
+    cpus 8
+    memory '16 GB'
+    
+    input:
+    tuple val(name), path(r1), path(r2)
+    val(stage)
+
+    output:
+    path('fastqc_out')
+
+    """
+    mkdir fastqc_out
+    fastqc -t ${task.cpus} -o fastqc_out $r1 $r2
+    """
+}
+
 process Fastp {
   conda '/shared/homes/120274/miniconda3/envs/fastp'
   publishDir params.outdir, mode: 'copy', saveAs: {fn -> "$name/fastp/$fn"}
@@ -80,15 +99,58 @@ workflow trim {
     Fastp.out.reads
 }
 
+workflow fastqc_raw {
+    take:
+    read_sets
+
+    main:
+    FastQC(read_sets, Channel.value('raw'))
+}
+
+workflow fastqc_clean {
+    take:
+    read_sets
+
+    main:
+    FastQC(read_sets, Channel.value('clean'))
+}
+
+workflow fastqc_nohuman {
+    take:
+    read_sets
+
+    main:
+    FastQC(read_sets, Channel.value('no_human'))
+}
+
+workflow fastqc_nocow {
+    take:
+    read_sets
+
+    main:
+    FastQC(read_sets, Channel.value('no_cow'))
+}
+
 workflow clean_up {
 
   take:
   read_sets 
 
   main:
+
+      fastqc_raw(read_sets)
+
   Fastp(read_sets)
+
+      fastqc_clean(Fastp.out.reads)
+
   remove_human(Fastp.out.reads)
+
+      fastqc_nohuman(remove_human.out)
+
   remove_host(remove_human.out)
+
+     fastqc_nocow(remove_host.out)
 
   emit:
   remove_host.out

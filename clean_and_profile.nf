@@ -1,7 +1,7 @@
-include { reads_profile; contig_assign } from './modules/tax_profile.nf'
-include { trim; clean_up               } from './modules/clean_reads.nf'
-include { kmer_spades; meta_spades     } from './modules/assemble.nf'
-include { find_rnavirus                } from './modules/virus.nf'
+include { reads_profile; contig_assign      } from './modules/tax_profile.nf'
+include { trim; clean_up                    } from './modules/clean_reads.nf'
+include { rna_spades; meta_spades; meta_qc; meta_qc2  } from './modules/assemble.nf'
+include { find_rnavirus; find_rnavirus2     } from './modules/virus.nf'
 
 params.trim_only = false
 params.rank = "genus"
@@ -21,6 +21,9 @@ params.min_len = 5000
  * --asm_mode [STR] Optional: ( --extra_kmers [INT,INT,INT,...] | --kmer_series [INT,INT,INT,...] )
  */
 
+/* 
+ * This approach causes lost data
+ *
 process FasterqDump {
     publishDir params.outdir, mode: 'copy', saveAs: {fn -> "$name/raw_reads/$fn"}
     cpus 8
@@ -49,14 +52,15 @@ workflow extract_fastq {
 
     emit:
     FasterqDump.out
-}
+} 
+*/
 
 workflow {
 
-    runs = Channel.fromPath(params.runs).splitCsv()
-    read_sets = extract_fastq(runs)
+//    runs = Channel.fromPath(params.runs).splitCsv()
+//    read_sets = extract_fastq(runs)
 
-//    read_sets = Channel.fromPath(params.read_sets).splitCsv()
+    read_sets = Channel.fromPath(params.read_sets).splitCsv()
     
     if (params.trim_only == true) {
         read_sets = trim(read_sets)
@@ -65,27 +69,25 @@ workflow {
         read_sets = clean_up(read_sets)
     }
 
+/*
     reads_profile(read_sets,
                   Channel.value(params.sm_ref),
                   Channel.value(params.sm_tax),
                   Channel.value(params.min_len),
                   Channel.value(params.rank))
+*/
 
-//    asm = kmer_spades(read_sets,
-//                      Channel.value(params.kmer_series))
+    asm = meta_spades(read_sets)
+    meta_qc(asm.asm_seqs)
 
-//    asm = meta_spades(read_sets)
-
-//    if (params.asm_mode == "rna") {
-//        asm = rna_spades(read_sets)
-//    }
-//    else if (params.asm_mode == "meta") {
-//        asm = meta_spades(read_sets)
-//    }
+//    asm_rna = rna_spades(read_sets)
+//    meta_qc2(asm_rna.asm_seqs)
 
 //    contig_assign(asm.asm_seqs,
 //                  Channel.fromPath(params.cat_db),
 //                  Channel.fromPath(params.cat_tax))
 
-//    find_rnavirus(asm.asm_seqs)
+    find_rnavirus(asm.asm_seqs)
+
+//    find_rnavirus2(asm_rna.asm_seqs)
 }

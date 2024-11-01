@@ -18,8 +18,8 @@ process Sketch {
 process Gather {
   conda '/shared/homes/120274/miniconda3/envs/sourmash'
   publishDir params.outdir, mode: 'copy', saveAs: {fn -> "$name/sourmash/$fn"}
-  cpus 2
-  memory '256 GB'
+  cpus 16
+  memory '128 GB'
 
   input:
   tuple val(name), path(sketch)
@@ -27,11 +27,15 @@ process Gather {
   val(min_len)
 
   output:
-  tuple val(name), path('matches.zip'), path('gather.csv')
+  tuple val(name), path('prefetch.zip'), path('gather.csv')
 
   """
-  sourmash gather --threshold-bp $min_len $sketch $ref_db --save-matches matches.zip
-  sourmash gather --threshold-bp $min_len $sketch matches.zip -o gather.csv
+  sourmash scripts fastgather \
+        --cores ${task.cpus} \
+        --threshold-bp $min_len \
+        --output-prefetch prefetch.zip \
+        --output-gather gather.csv \
+        $sketch $ref_db
   """
 }
 
@@ -71,8 +75,12 @@ process TaxProfile {
   path('taxprof.*')
 
   """
-  sourmash tax metagenome -F human csv_summary lineage_summary krona kreport \
-     -g $gather -t $tax_db -r $rank -o taxprof
+  sourmash tax metagenome \
+        -F human csv_summary lineage_summary krona kreport \
+        -g $gather \
+        -t $tax_db \
+        -r $rank \
+        -o taxprof
   """
 }
 

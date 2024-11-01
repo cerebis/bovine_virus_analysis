@@ -3,6 +3,24 @@ params.asm_maxmem = '128 GB'
 params.asm_cpus = 32
 params.asm_queue = 'workq'
 
+
+process MetaQuast {
+    conda '/shared/homes/120274/miniconda3/envs/quast'
+    publishDir params.outdir, mode: 'copy', saveAs: {fn -> "${name}/${asm_mode}spades/${fn}"}
+    cpus 4
+    memory '32 GB'
+   
+    input:
+    tuple val(name), val(asm_mode), path(contigs)
+
+    output:
+    path('metaquast_out')
+
+    """
+    metaquast -t ${task.cpus} --max-ref-number 0 -o metaquast_out $contigs
+    """
+}
+
 process Spades {
     scratch '/scratch/u120274/'
     conda '/shared/homes/120274/miniconda3/envs/spades'
@@ -149,6 +167,28 @@ workflow rna_spades {
 
     emit:
     asm_seqs = default_spades.out.asm_seqs
+}
+
+workflow meta_qc {
+    take:
+    asm
+
+    main:
+    MetaQuast(asm)
+
+    emit:
+    MetaQuast.out
+}
+
+workflow meta_qc2 {
+    take:
+    asm
+
+    main:
+    MetaQuast(asm)
+
+    emit:
+    MetaQuast.out
 }
 
 workflow meta_spades {
